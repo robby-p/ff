@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>introduction</title>
+    <style></style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css"
+      integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css"
+    />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI",
+          system-ui, "Ubuntu", "Droid Sans", sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+    </style>
+    <style>
+      .task-list-item {
+        list-style-type: none;
+      }
+      .task-list-item-checkbox {
+        margin-left: -20px;
+        vertical-align: middle;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+  </head>
+  <body class="vscode-body vscode-light">
+    <h1 id="introduction">introduction</h1>
+    <ul>
+      <li>
+        <p>
+          Hello, I'm Robby Polana &lt;@rpolana&gt; - working @ sqsp doing
+          front-end development on #member-accounts past ~2 years
+        </p>
+      </li>
+      <li>
+        <p>
+          We use webpack to compile our modules into bundles and modern es6
+          javascript, jsx to es5 among a quite few other thing
+        </p>
+      </li>
+      <li>
+        <p>
+          One of other things we use webpack for; is delivering individually
+          bundled assets for 5 other unique locales, (portuguese italian german
+          french and spanish)
+        </p>
+      </li>
+      <li>
+        <p>
+          Bundling locales is accomplished by essentially running webpack for
+          <em>every single locale</em> (more specifically exporting an array
+          from the webpack config)
+        </p>
+      </li>
+      <li>
+        <p>
+          Running webpack for every locale is great because the implementation
+          is simple. For everyone locale you are creating an exclusive distinct
+          bundle by trimming out 'chunks' (pieces of a webpack bundle) which are
+          not apart of that locale. For instance your italian bundle should not
+          include french or german chunks etc -- This mechanism is called the
+          ContextReplacementPlugin; more on that later;
+        </p>
+      </li>
+      <li>
+        <p>
+          How do these chunks get included in the first place? What is italian
+          specific locale data doing with german or french translations and
+          formatting?
+        </p>
+      </li>
+    </ul>
+    <h2 id="background-on-require---commonjs-module-syntax">
+      background on require(...) - commonjs module syntax
+    </h2>
+    <ul>
+      <li>
+        <p>
+          Modern javascript uses modules to manage dependencies, gone are the
+          days of relying on the ordering of script tags to properly load your
+          dependencies.
+        </p>
+      </li>
+      <li>
+        <p>
+          Modules give us encapsulation, reusability, distinct declarations of
+          dependencies on other modules, and proper ordering of instantiation
+          and execution.
+        </p>
+      </li>
+      <li>
+        <p>
+          One of the most common module syntax today is <code>require</code> -
+          or the commonjs module specification. This syntax is widely used today
+          particularly on Nodejs.
+        </p>
+      </li>
+      <li>
+        <p>
+          (a new syntax exist which will likely supplant <code>require</code>,
+          import or es6 module syntax;)
+        </p>
+      </li>
+      <li>
+        <p>
+          In <code>require</code> commonjs modules are loaded synchronously.
+          Modules <em>may also</em> be resolved dynamically or in other words
+          resolved at runtime - for example,
+        </p>
+        <pre><code class="language-js"><div><span class="hljs-keyword">var</span> loader = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">loader</span>(<span class="hljs-params">language</span>) </span>{
+  <span class="hljs-keyword">return</span> <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../../packs/&quot;</span> + language + <span class="hljs-string">&quot;.json&quot;</span>);
+</div></code></pre>
+      </li>
+      <li>
+        <p>
+          In server side NodeJS (the most common commonjs implementation), this
+          is not an issue since you can synchronously read from the file system
+          without much or virtually any latency.
+        </p>
+      </li>
+      <li>
+        <p>
+          (If behind the scenes this went the asynchronous route you would have
+          to use a callback or promise, thus affecting the calling code)
+        </p>
+      </li>
+      <li>
+        <p>
+          for the frontend client side browser, whose resource access is limited
+          to transferal over network layer; which has a good deal of latency,
+          rather than a file system. There is a little trick webpack uses to
+          accomplish both a synchronous module <code>require</code>
+          <em>and dynamic resolution</em>
+        </p>
+      </li>
+      <li>
+        <p>
+          Include the whole file system in the bundle! (Kind of but not really.)
+        </p>
+      </li>
+      <li>
+        <p>
+          In the above example, webpack will see you're dynamically resolving a
+          file in the <code>/packs</code> directory, therefore it will
+          <em>include all of packs</em>
+        </p>
+      </li>
+      <li>
+        <p>
+          This example was taken directly from <code>@sqs/18n-ui</code>, which
+          &quot;provides i18n utilities for formatting, translating and
+          displaying user interfaces.&quot; uses this dynamic synchronous
+          loading and looks like this
+        </p>
+      </li>
+      <li>
+        <p>
+          By default webpack would include everything in
+          <code>@sqs/i18n-ui</code> packages
+          <code>../../../packs/</code> directory, this would result in a
+          needlessly larger total bundle size, there is no need to include an
+          Italian language pack when the consumer's locale is set to German
+        </p>
+      </li>
+    </ul>
+    <p>
+      <strong
+        >This is unless we utilized the previously mentioned
+        ContextReplacementPlugin</strong
+      >
+    </p>
+    <ul>
+      <li>
+        <p>
+          Since we run wepback for each locale, thus generated a bundle
+          exclusively and individually, we can tell Webpack to only include the
+          <em>Italian</em> locale file or files in
+          <code>../../../packs/</code> for the <em>Italian</em> bundle, same for
+          german spanish french and portuguese.
+        </p>
+      </li>
+      <li>
+        <p>Our webpack plugin configuration therefore looks like this:</p>
+      </li>
+    </ul>
+    <pre><code class="language-js"><div>    plugins: [
+      <span class="hljs-keyword">new</span> webpack.ContextReplacementPlugin(<span class="hljs-regexp">/@sqs\/i18n-ui\/packs$/</span>, <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">`(<span class="hljs-subst">${locale}</span>).json$`</span>, <span class="hljs-string">&#x27;ig&#x27;</span>)),
+      ...
+    ]
+
+</div></code></pre>
+    <ul>
+      <li>
+        <p>
+          These differentiated 'trimmed' bundles are then served discriminately
+          on inbound requests for our <code>index.html</code> file.
+        </p>
+      </li>
+      <li>
+        <p>
+          So as a user and setting your locale to Italian, we would serve the
+          <code>index.html</code> with something like this,
+        </p>
+      </li>
+    </ul>
+    <pre><code class="language-html"><div>  <span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">&quot;it&quot;</span>&gt;</span>
+  ...
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;MyApp-it.js&quot;</span> &gt;</span>
+</div></code></pre>
+    <ul>
+      <li>for german:</li>
+    </ul>
+    <pre><code class="language-html"><div>  <span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">&quot;de&quot;</span>&gt;</span>
+  ...
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;MyApp-de.js&quot;</span> &gt;</span>
+</div></code></pre>
+    <p>etc.</p>
+    <h1 id="problem">problem</h1>
+    <ul>
+      <li>
+        <p>
+          This solution is common and simple in execution, but doesn't scale
+          well
+        </p>
+      </li>
+      <li>
+        <p>
+          We are shipping a complete set of bundles
+          <em>for every single locale</em> rather than just our source and our
+          locale specific code
+        </p>
+      </li>
+      <li>
+        <p>As the amount of locales increases so will the amount of bundles</p>
+      </li>
+      <li>
+        <p>
+          On top of just the ContextReplacementPlugin happening in our webpack
+          build, there are countless other processes and compilations which take
+          place.
+        </p>
+      </li>
+      <li>
+        <p>
+          The resulting production assets are huge, which have lead to uploading
+          timeouts when moving assets to our asset store in the ci pipeline
+        </p>
+      </li>
+      <li>
+        <p>
+          This method is problematic in that it has very long build times,
+          upload times, timeouts and out of memory errors.
+        </p>
+      </li>
+      <li>
+        <p>
+          Most importantly production builds locally; (sometimes needed for
+          debugging), are either impractically long or nearly impossible as out
+          of memory errors are common
+        </p>
+      </li>
+    </ul>
+    <h1 id="solution">solution</h1>
+    <ul>
+      <li>
+        <p>
+          We want to be able to provide unique exclusive locales to our users
+          without unnecessarily compiling and shipping duplicating code.
+        </p>
+      </li>
+      <li>
+        <p>
+          This can be accomplished by looking further into webpack's require
+          mechanisms
+        </p>
+      </li>
+      <li>
+        <p>
+          <code>require.context</code>, <code>require.resolveWeak</code>, and
+          the not official somewhat of a hack; <code>__webpack_require__</code>
+        </p>
+      </li>
+      <li>
+        <p>
+          <code>require.context</code> traditionally gives you a different set
+          of control on how you do your <em>dynamic</em> imports, you pass it a
+          directory, and then you regex for the files within that directory you
+          want to designate as chunks. <code>require.context</code>.
+        </p>
+        <ul>
+          <li>
+            <p>
+              The part we're interested in, in <code>require.context</code> is
+              that module-designation ability. The third argument, the mode,
+              sync, or eager. The module type will be 'lazy' as this makes it a
+              lazy loadable chunk, The intention of this functionality is to
+              create asynchronous chunks. But we are interested in at as it will
+              create an individual chunk not included in the current file.
+            </p>
+          </li>
+          <li>
+            <p>The resulting call looks like this</p>
+            <pre><code class="language-js"><div>  <span class="hljs-built_in">require</span>.context(<span class="hljs-string">&quot;./sqs-i18n-translations/strings&quot;</span>,<span class="hljs-literal">true</span>,<span class="hljs-regexp">/.*\.yaml/</span>,<span class="hljs-string">&#x27;lazy&#x27;</span>);
+</div></code></pre>
+          </li>
+          <li>
+            <p>
+              Lazy chunk splitting is not limited to code in #member-accounts.
+              We also need to do it in our Squarespace libraries. To accomplish
+              lazy chunk splitting for internal libraries, a patch using
+              <code>patch-package</code> library was implemented. The
+              <code>require.context</code> above was then included in these
+              libraries. The <code>require.context</code> looking nearly
+              identical to the one here.
+            </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+          <code>__webpack_require__</code> - Is internally what your
+          <code>require</code>s get compiled into, this is syntax is used to
+          require something without webpack analyzing it and including a
+          dependency into a bundle.
+        </p>
+      </li>
+      <li>
+        <p>
+          <code>require.resolveWeak</code> - This mechanism will
+          <em>resolve</em> your module, or <em>lookup</em> the 'path' of a given
+          module, without pulling it into the bundle.
+          <code>require.resolveWeak</code> is side-effectless lookup. It only
+          returns the module path, and does nothing else. This is used to come
+          up with a path to pass into <code>__webpack_require__</code>
+        </p>
+      </li>
+      <li>
+        <p>
+          Here is an example patch being used in
+          <code>@sqs/i18n-components</code>
+        </p>
+      </li>
+    </ul>
+    <pre><code class="language-diff"><div>function translationsLoader(translationLocale) {
+<span class="hljs-deletion">-  return require(&quot;../../sqs-i18n-translations/strings/&quot;.concat(PACKAGE_NAME, &quot;.&quot;).concat(translationLocale, &quot;.yaml&quot;));</span>
+
+<span class="hljs-addition">+  require.context(&quot;../../sqs-i18n-translations/strings&quot;,true,/.*\.yaml/,&#x27;lazy&#x27;);</span>
+
+<span class="hljs-addition">+  return __webpack_require__(require.resolveWeak(&quot;../../sqs-i18n-translations/strings/&quot;.concat(PACKAGE_NAME, &quot;.&quot;).concat(translationLocale, &quot;.yaml&quot;)));</span>
+  }
+
+</div></code></pre>
+    <ul>
+      <li>
+        <p>
+          There is a lazy chunk designation, and a traditional dynamic
+          <code>require</code> is being swapped out with
+          <code>__webpack_require__(require.resolveWeak(...)</code>
+        </p>
+      </li>
+      <li>
+        <p>
+          The fourth piece of the puzzle is gathering all these individual
+          chunks by locale discriminately so it can be served to our user later
+          on in one piece, so all of our libraries and code will have these
+          chunks ready by the time they load.
+        </p>
+      </li>
+      <li>
+        <p>
+          <code>require.context</code> Separates our locale data into individual
+          chunks. Our locale data is split into individual chunks, but we need a
+          way to group them all by their locale as they exist across multiple
+          libraries. So the source for a given locale across multiple libraries
+          can be loaded on demand. This is easy to do in a webpack config with
+          its 'splitChunks' mechanism in <code>webpack.config.js</code>
+          <code
+            >js splitChunks: { cacheGroups: { i18n: { priority: 10, test:
+            /sqs-i18n-translations.strings|@sqs.i18n-ui.packs|moment.locale/,
+            chunks: 'all', name(module, chunks, cacheGroupKey) { const locale =
+            getModuleLocaleFromName(module); return `i18n-${locale}`; }, },
+          </code>
+          From the module name, which is usually of the form
+          <code>it.js</code> or <code>pt.js</code> or <code>de.js</code> it's
+          pretty easy to figure out which locale they are, so for this example
+          we use a made up function <code>getModuleLocaleFromName</code> to do
+          that. (the actual implementation is a bit more involved but this is
+          for the sake of the example). These individual files were made
+          available as individual chunks by <code>require.context</code>.
+        </p>
+        <ul>
+          <li>
+            <p>
+              Our result then is a <em>catch all</em> chunk, 1 chunk for each
+              locale, across multiple libraries.
+            </p>
+          </li>
+          <li>
+            <p>
+              The resulting locale file will look like:
+              <code>i18n-it.js</code> or <code>i18n-pt.js</code> or
+              <code>i18n-de.js</code>
+            </p>
+          </li>
+          <li>
+            <p>
+              Since splitting the chunks, has already been taken care of by
+              <code>require.context</code> which then got catch all'd into a
+              locale file, it is up to us to include it ourselves.
+            </p>
+          </li>
+          <li>
+            <p>
+              The 5th final piece of this long winding journey to a better
+              locale story is serving our locale file to the user.
+            </p>
+          </li>
+          <li>
+            <p>
+              The user makes an inbound request to <code>index.html</code>,
+              their locale preference is determined on the backend and we insert
+              the locale bundle request as a script tag, first and foremost,
+              ordering is important, as the chunks need to be available to
+              webpack.
+            </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>The result is something like this (for german, <code>de</code>)</p>
+      </li>
+    </ul>
+    <pre><code class="language-html"><div>  <span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">&quot;de&quot;</span>&gt;</span>
+  ...
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;i18-de.js&quot;</span> &gt;</span><span class="handlebars"><span class="xml">
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;app.js&quot;</span> &gt;</span><span class="handlebars"><span class="xml">
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;vendor.js&quot;</span> &gt;</span>
+</span></span></span></span></div></code></pre>
+    <p>
+      Notice, <code>app</code> and <code>vendor</code> do not have locale
+      designations.
+    </p>
+  </body>
+</html>
